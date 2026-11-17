@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>洗剤計算ツール</title>
+
+<style>
+body {
+    font-family: sans-serif;
+    margin: 20px;
+    max-width: 350px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+h1 {
+    font-size: 1.3em;
+    margin-bottom: 10px;
+}
+
+h2 {
+    margin-top: 24px;
+    font-size: 1.15em;
+}
+
+label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+.row-gray {
+    background: #f7f7f7;
+}
+.row-white {
+    background: #ffffff;
+}
+
+label span {
+    width: 120px;
+}
+
+label input {
+    width: 120px;
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px;
+    width: 48%;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.result {
+    margin-top: 25px;
+    background: #f7f7f7;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.note {
+    font-size: 0.85em;
+    color: #444;
+    margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>洗剤計算ツール</h1>
+
+<h2>製品①</h2>
+<label class="row-gray"><span>内容量(ml)</span><input type="number" id="ml1" /></label>
+<label class="row-white"><span>個数</span><input type="number" id="count1" /></label>
+<label class="row-gray"><span>価格(円)</span><input type="number" id="price1" /></label>
+
+<p class="note">
+※送料を含む価格を入力してください。<br>
+※値引きクーポンやポイント等はあらかじめ差し引いた金額を入力してください。
+</p>
+
+<h2>製品②</h2>
+<label class="row-gray"><span>内容量(ml)</span><input type="number" id="ml2" /></label>
+<label class="row-white"><span>個数</span><input type="number" id="count2" /></label>
+<label class="row-gray"><span>価格(円)</span><input type="number" id="price2" /></label>
+
+<div class="button-container">
+    <button onclick="calc()">結果を表示</button>
+    <button onclick="saveData()">保存する</button>
+</div>
+
+<div class="result" id="result"></div>
+
+<p class="note">本ツールの結果はあくまで目安です。</p>
+
+<script>
+// ★ 小数点第2位以下を切り捨てる関数
+function floor2(num) {
+    return Math.floor(num * 100) / 100;
+}
+
+// 保存データ復元
+window.onload = function () {
+    const saved = localStorage.getItem('detergentCalcData');
+    if (!saved) return;
+
+    const data = JSON.parse(saved);
+    const ids = ['ml1','count1','price1','ml2','count2','price2'];
+
+    ids.forEach(id => {
+        if (data[id] !== undefined) {
+            document.getElementById(id).value = data[id];
+        }
+    });
+
+    if (data.resultHTML) {
+        document.getElementById('result').innerHTML = data.resultHTML;
+    }
+};
+
+function calc() {
+    const ml1 = Number(document.getElementById('ml1').value);
+    const count1 = Number(document.getElementById('count1').value);
+    const price1 = Number(document.getElementById('price1').value);
+
+    const ml2 = Number(document.getElementById('ml2').value);
+    const count2 = Number(document.getElementById('count2').value);
+    const price2 = Number(document.getElementById('price2').value);
+
+    if (!ml1 || !count1 || !price1 || !ml2 || !count2 || !price2) {
+        document.getElementById('result').innerHTML =
+            '全ての項目を入力してください。';
+        return;
+    }
+
+    const total1 = ml1 * count1;
+    const total2 = ml2 * count2;
+
+    // ★ 小数点第2位以下の切り捨てに変更
+    const perYen1 = floor2(total1 / price1);
+    const perYen2 = floor2(total2 / price2);
+
+    let better;
+    if (perYen1 > perYen2) better = '製品①の方がコスパが良いです。';
+    else if (perYen2 > perYen1) better = '製品②の方がコスパが良いです。';
+    else better = 'どちらも同じコスパです。';
+
+    const html = `
+        総内容量①: ${total1} ml<br>
+        総内容量②: ${total2} ml<br>
+        1円あたり①: ${perYen1} ml/円<br>
+        1円あたり②: ${perYen2} ml/円<br>
+        ${better}<br><br>
+        <span style="font-size:0.85em;color:#444;">
+        ※1円あたりの値は小数点第2位以下を切り捨てています。
+        </span>
+    `;
+
+    document.getElementById('result').innerHTML = html;
+}
+
+function saveData() {
+    const ids = ['ml1','count1','price1','ml2','count2','price2'];
+
+    const data = {};
+    ids.forEach(id => (data[id] = document.getElementById(id).value));
+    data.resultHTML = document.getElementById('result').innerHTML;
+
+    localStorage.setItem('detergentCalcData', JSON.stringify(data));
+    alert('データを保存しました。');
+}
+</script>
+
+</body>
+</html>
